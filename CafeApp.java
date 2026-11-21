@@ -1,15 +1,23 @@
+import exception.AksesDitolakException;
+import exception.CafeException;
 import java.awt.*;
 import java.util.List;
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
-
-import repository.DatabaseManager;
-import exception.AksesDitolakException;
-import exception.CafeException;
 import model.BahanBaku;
 import model.User;
+import repository.DatabaseManager;
 
 public class CafeApp extends JFrame {
+    private static final Color MC_YELLOW = new Color(255, 188, 0);
+    private static final Color MC_RED = new Color(218, 41, 28);
+    private static final Color DARK = new Color(35, 35, 35);
+    private static final Color LIGHT_BG = new Color(247, 247, 247);
+    private static final Color MUTED = new Color(110, 110, 110);
+    
+    
     private CardLayout cardLayout = new CardLayout();
     private JPanel mainPanel = new JPanel(cardLayout);
     private JLabel lblStatus = new JLabel("Status: Silakan Login terlebih dahulu.");
@@ -31,7 +39,9 @@ public class CafeApp extends JFrame {
     // Komponen Kasir
     private JComboBox<String> cmbMenu = new JComboBox<>();
     private JTextField txtJumlahBeli = new JTextField(5);
-
+    private JLabel lblMenuTerpilih = new JLabel("Belum ada menu dipilih");
+    private JLabel lblHargaTerpilih = new JLabel("Pilih menu untuk memulai pesanan");
+    private JPanel panelDaftarMenu = new JPanel(new GridLayout(0, 3, 16, 16));
     // Komponen Gudang & History
     private DefaultTableModel modelBahan = new DefaultTableModel(new String[]{"ID", "Nama Bahan", "Stok", "Satuan"}, 0);
     private JTable tblBahan = new JTable(modelBahan);
@@ -40,18 +50,22 @@ public class CafeApp extends JFrame {
 
     private DefaultTableModel modelHistory = new DefaultTableModel(new String[]{"ID", "Waktu", "Kasir", "Menu", "Qty", "Total"}, 0);
     private JTable tblHistory = new JTable(modelHistory);
+    private Frame background;
 
     public CafeApp() {
         setTitle("Sistem Kasir & Inventori Cafe");
-        setSize(800, 550);
+        setSize(1180, 760);
+        setMinimumSize(new Dimension(980, 650));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
+        getContentPane().setBackground(LIGHT_BG);
 
         // Bar Status di Bagian Bawah (Pengganti JOptionPane)
         lblStatus.setOpaque(true);
-        lblStatus.setBackground(new Color(230, 230, 230));
-        lblStatus.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
+        lblStatus.setBackground(Color.WHITE);
+        lblStatus.setBorder(new EmptyBorder(10, 18, 10, 18));
+        lblStatus.setFont(new Font("SansSerif", Font.BOLD, 12));
         add(lblStatus, BorderLayout.SOUTH);
 
         // Siapkan Halaman Login & Halaman Utama
@@ -64,52 +78,128 @@ public class CafeApp extends JFrame {
 
     private void setPesan(String pesan, boolean isError) {
         lblStatus.setText(pesan);
-        lblStatus.setForeground(isError ? Color.RED : new Color(0, 128, 0));
+        lblStatus.setForeground(isError ? MC_RED : new Color(0, 130, 65));
     }
-
+    
+    //Panel Login
     private JPanel buatPanelLogin() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        JPanel panelBackground = new JPanel(new GridBagLayout());
+        panelBackground.setBackground(new Color(245, 245, 245));
 
-        JLabel title = new JLabel("LOGIN SISTEM CAFE");
-        title.setFont(new Font("SansSerif", Font.BOLD, 18));
+        JPanel card = new JPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(new Color(230, 230, 230), 1, true),
+            new EmptyBorder(34, 42, 34, 42)
+        ));
+        card.setPreferredSize(new Dimension(420, 440));
 
-        JButton btnLogin = new JButton("Masuk");
+        JLabel logo = new JLabel("C", SwingConstants.CENTER);
+        logo.setOpaque(true);
+        logo.setBackground(MC_YELLOW);
+        logo.setForeground(MC_RED);
+        logo.setFont(new Font("Arial", Font.BOLD, 42));
+        logo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        logo.setPreferredSize(new Dimension(76, 76));
+        logo.setMaximumSize(new Dimension(76, 76));
 
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
-        panel.add(title, gbc);
+        JLabel title = new JLabel("SELAMAT DATANG!");
+        title.setFont(new Font("SansSerif", Font.BOLD, 23));
+        title.setForeground(DARK);
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        gbc.gridwidth = 1; gbc.gridy = 1;
-        panel.add(new JLabel("Username:"), gbc);
-        gbc.gridx = 1;
-        panel.add(txtUser, gbc);
+        JLabel subtitle = new JLabel("Silakan masuk ke sistem cafe");
+        subtitle.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        subtitle.setForeground(MUTED);
+        subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        gbc.gridx = 0; gbc.gridy = 2;
-        panel.add(new JLabel("Password:"), gbc);
-        gbc.gridx = 1;
-        panel.add(txtPass, gbc);
+        txtUser.setMaximumSize(new Dimension(330, 42));
+        txtPass.setMaximumSize(new Dimension(330, 42));
+        styleTextField(txtUser);
+        styleTextField(txtPass);
 
-        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
-        panel.add(btnLogin, gbc);
-
+        JButton btnLogin = primaryButton("MASUK");
+        btnLogin.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnLogin.setMaximumSize(new Dimension(330, 44));
         btnLogin.addActionListener(e -> prosesLogin());
-        return panel;
+
+        card.add(logo);
+        card.add(Box.createVerticalStrut(22));
+        card.add(title);
+        card.add(Box.createVerticalStrut(6));
+        card.add(subtitle);
+        card.add(Box.createVerticalStrut(28));
+        card.add(leftLabel("USERNAME"));
+        card.add(Box.createVerticalStrut(7));
+        card.add(txtUser);
+        card.add(Box.createVerticalStrut(16));
+        card.add(leftLabel("PASSWORD"));
+        card.add(Box.createVerticalStrut(7));
+        card.add(txtPass);
+        card.add(Box.createVerticalStrut(24));
+        card.add(btnLogin);
+
+       panelBackground.add(card);
+       return panelBackground;
     }
 
+    //Panel Utama
     private JPanel buatPanelUtama() {
         JPanel container = new JPanel(new BorderLayout());
+        container.setBackground(LIGHT_BG);
 
         // Header Navigasi
-        JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel topBar = new JPanel(new BorderLayout());
+        topBar.setBackground(Color.WHITE);
+        topBar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(230, 230, 230)));
+        topBar.setBorder(new EmptyBorder(13, 22, 13, 22));
+
+        JPanel brand = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
+        brand.setOpaque(false);
+        JLabel logo = new JLabel("M");
+        logo.setOpaque(true);
+        logo.setBackground(MC_YELLOW);
+        logo.setForeground(MC_RED);
+        logo.setFont(new Font("Arial", Font.BOLD, 24));
+        logo.setHorizontalAlignment(SwingConstants.CENTER);
+        logo.setPreferredSize(new Dimension(42, 42));
+        JLabel brandName = new JLabel("Cafe");
+        brandName.setFont(new Font("SansSerif", Font.BOLD, 21));
+        brandName.setForeground(DARK);
+        brand.add(logo);
+        brand.add(brandName);
+
+        JPanel nav = new JPanel(new FlowLayout(FlowLayout.RIGHT, 9, 4));
+        nav.setOpaque(false);
+        styleNavButton(btnMenuKasir);
+        styleNavButton(btnMenuGudang);
         JButton btnLogout = new JButton("Logout");
-        topBar.add(lblWelcome);
-        topBar.add(btnMenuKasir);
-        topBar.add(btnMenuGudang);
-        topBar.add(btnLogout);
+        btnLogout.setFont(new Font("SansSerif", Font.BOLD, 12));
+        btnLogout.setForeground(MC_RED);
+        btnLogout.setBackground(Color.WHITE);
+        btnLogout.setFocusPainted(false);
+        btnLogout.setBorder(new LineBorder(new Color(225, 225, 225), 1, true));
+        btnLogout.setPreferredSize(new Dimension(95, 38));
+        nav.add(btnMenuKasir);
+        nav.add(btnMenuGudang);
+        nav.add(btnLogout);
+
+        JPanel rightHeader = new JPanel();
+        rightHeader.setOpaque(false);
+        rightHeader.setLayout(new BoxLayout(rightHeader, BoxLayout.Y_AXIS));
+        lblWelcome.setFont(new Font("SansSerif", Font.BOLD, 12));
+        lblWelcome.setForeground(DARK);
+        lblWelcome.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        rightHeader.add(lblWelcome);
+        rightHeader.add(Box.createVerticalStrut(7));
+        rightHeader.add(nav);
+
+        topBar.add(brand, BorderLayout.WEST);
+        topBar.add(rightHeader, BorderLayout.EAST);
         container.add(topBar, BorderLayout.NORTH);
 
-        // Sub-panel untuk Kasir dan Gudang/History
+        subPanel.setBackground(LIGHT_BG);
         subPanel.add(buatPanelKasir(), "KASIR");
         subPanel.add(buatPanelGudangDanHistory(), "GUDANG");
         container.add(subPanel, BorderLayout.CENTER);
@@ -152,30 +242,66 @@ public class CafeApp extends JFrame {
         return container;
     }
 
+    //Panel Kasir
     private JPanel buatPanelKasir() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 8, 8, 8);
+        JPanel page = new JPanel(new BorderLayout(18, 14));
+        page.setBackground(LIGHT_BG);
+        page.setBorder(new EmptyBorder(22, 24, 20, 24));
 
-        JLabel title = new JLabel("TRANSAKSI KASIR CAFE");
-        title.setFont(new Font("SansSerif", Font.BOLD, 16));
-        JButton btnPesan = new JButton("Proses Pesanan");
+        JPanel heading = new JPanel();
+        heading.setOpaque(false);
+        heading.setLayout(new BoxLayout(heading, BoxLayout.Y_AXIS));
+        JLabel title = new JLabel("Coffe");
+        title.setFont(new Font("SansSerif", Font.BOLD, 27));
+        title.setForeground(DARK);
+        JLabel subtitle = new JLabel("Pilih Kopi favorit kamu dan mulai pesanan");
+        subtitle.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        subtitle.setForeground(MUTED);
+        heading.add(title);
+        heading.add(Box.createVerticalStrut(5));
+        heading.add(subtitle);
+        page.add(heading, BorderLayout.NORTH);
 
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
-        panel.add(title, gbc);
+        panelDaftarMenu.setBackground(LIGHT_BG);
+        panelDaftarMenu.setBorder(new EmptyBorder(4, 2, 4, 2));
+        JScrollPane scrollMenu = new JScrollPane(panelDaftarMenu);
+        scrollMenu.setBorder(null);
+        scrollMenu.getViewport().setBackground(LIGHT_BG);
+        scrollMenu.getVerticalScrollBar().setUnitIncrement(18);
+        page.add(scrollMenu, BorderLayout.CENTER);
 
-        gbc.gridwidth = 1; gbc.gridy = 1;
-        panel.add(new JLabel("Pilih Menu:"), gbc);
-        gbc.gridx = 1;
-        panel.add(cmbMenu, gbc);
+        JPanel orderCard = new JPanel();
+        orderCard.setLayout(new BoxLayout(orderCard, BoxLayout.Y_AXIS));
+        orderCard.setBackground(Color.WHITE);
+        orderCard.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(new Color(230, 230, 230), 1, true),
+            new EmptyBorder(20, 20, 20, 20)
+        ));
+        orderCard.setPreferredSize(new Dimension(255, 10));
 
-        gbc.gridx = 0; gbc.gridy = 2;
-        panel.add(new JLabel("Jumlah Porsi:"), gbc);
-        gbc.gridx = 1;
-        panel.add(txtJumlahBeli, gbc);
+        JLabel orderTitle = new JLabel("Pesanan kamu");
+        orderTitle.setFont(new Font("SansSerif", Font.BOLD, 19));
+        orderTitle.setForeground(DARK);
+        JLabel selectedCaption = new JLabel("MENU DIPILIH");
+        selectedCaption.setFont(new Font("SansSerif", Font.BOLD, 10));
+        selectedCaption.setForeground(MUTED);
+        lblMenuTerpilih.setFont(new Font("SansSerif", Font.BOLD, 15));
+        lblMenuTerpilih.setForeground(DARK);
+        lblMenuTerpilih.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lblHargaTerpilih.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        lblHargaTerpilih.setForeground(MUTED);
+        lblHargaTerpilih.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
-        panel.add(btnPesan, gbc);
+        JLabel qtyLabel = new JLabel("JUMLAH PORSI");
+        qtyLabel.setFont(new Font("SansSerif", Font.BOLD, 10));
+        qtyLabel.setForeground(MUTED);
+        txtJumlahBeli.setHorizontalAlignment(JTextField.CENTER);
+        styleTextField(txtJumlahBeli);
+        txtJumlahBeli.setMaximumSize(new Dimension(210, 40));
+
+        JButton btnPesan = primaryButton("PROSES PESANAN");
+        btnPesan.setMaximumSize(new Dimension(220, 44));
+        btnPesan.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         btnPesan.addActionListener(e -> {
             try {
@@ -196,20 +322,126 @@ public class CafeApp extends JFrame {
             }
         });
 
-        return panel;
+        orderCard.add(orderTitle);
+        orderCard.add(Box.createVerticalStrut(24));
+        orderCard.add(selectedCaption);
+        orderCard.add(Box.createVerticalStrut(8));
+        orderCard.add(lblMenuTerpilih);
+        orderCard.add(Box.createVerticalStrut(5));
+        orderCard.add(lblHargaTerpilih);
+        orderCard.add(Box.createVerticalStrut(25));
+        orderCard.add(new JSeparator());
+        orderCard.add(Box.createVerticalStrut(22));
+        orderCard.add(qtyLabel);
+        orderCard.add(Box.createVerticalStrut(8));
+        orderCard.add(txtJumlahBeli);
+        orderCard.add(Box.createVerticalStrut(22));
+        orderCard.add(btnPesan);
+        orderCard.add(Box.createVerticalGlue());
+        page.add(orderCard, BorderLayout.EAST);
+        
+        return page;
+    }
+
+    private JPanel buatKartuMenu(String menuText, int index) {
+        String[] bagian = menuText.split(" - ", 2);
+        String nama = bagian.length > 1 ? bagian[1] : menuText;
+        String harga = "";
+        int posisiHarga = nama.lastIndexOf(" (Rp ");
+        if (posisiHarga >= 0) {
+            harga = nama.substring(posisiHarga + 2, nama.length() - 1);
+            nama = nama.substring(0, posisiHarga);
+        }
+
+        JPanel card = new JPanel(new BorderLayout(8, 8));
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(new Color(225, 225, 225), 1, true),
+            new EmptyBorder(12, 12, 12, 12)
+        ));
+        card.setPreferredSize(new Dimension(190, 190));
+
+        JPanel imageArea = new JPanel(new GridBagLayout());
+        imageArea.setBackground(new Color(255, 246, 218));
+        imageArea.setPreferredSize(new Dimension(150, 95));
+        JLabel foodMark = new JLabel("M");
+        foodMark.setFont(new Font("Arial", Font.BOLD, 42));
+        foodMark.setForeground(MC_RED);
+        imageArea.add(foodMark);
+
+        JLabel nameLabel = new JLabel("<html><div style='width:145px'><b>" + escapeHtml(nama) + "</b></div></html>");
+        nameLabel.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        nameLabel.setForeground(DARK);
+        JLabel priceLabel = new JLabel(harga);
+        priceLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
+        priceLabel.setForeground(MC_RED);
+
+        JPanel info = new JPanel();
+        info.setOpaque(false);
+        info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
+        info.add(nameLabel);
+        info.add(Box.createVerticalStrut(6));
+        info.add(priceLabel);
+
+        final String namaMenu = nama;
+        final String hargaMenu = harga;
+        JButton choose = new JButton("PILIH MENU  +");
+        choose.setFont(new Font("SansSerif", Font.BOLD, 10));
+        choose.setForeground(DARK);
+        choose.setBackground(MC_YELLOW);
+        choose.setFocusPainted(false);
+        choose.setBorder(new EmptyBorder(9, 8, 9, 8));
+        choose.addActionListener(e -> {
+            cmbMenu.setSelectedIndex(index);
+            lblMenuTerpilih.setText(namaMenu);
+            lblHargaTerpilih.setText(hargaMenu);
+            setPesan("Menu " + namaMenu + " dipilih.", false);
+        });
+
+        card.add(imageArea, BorderLayout.NORTH);
+        card.add(info, BorderLayout.CENTER);
+        card.add(choose, BorderLayout.SOUTH);
+        return card;
+    }
+    
+    private void buatUlangKartuMenu() {
+        panelDaftarMenu.removeAll();
+        for (int i = 0; i < cmbMenu.getItemCount(); i++) {
+            panelDaftarMenu.add(buatKartuMenu(cmbMenu.getItemAt(i), i));
+        }
+        panelDaftarMenu.revalidate();
+        panelDaftarMenu.repaint();
     }
 
     private JPanel buatPanelGudangDanHistory() {
-        JPanel panel = new JPanel(new GridLayout(2, 1, 10, 10));
+        JPanel panel = new JPanel(new GridLayout(2, 1, 14, 14));
+        panel.setBackground(LIGHT_BG);
+        panel.setBorder(new EmptyBorder(20, 24, 20, 24));
 
-        // Bagian Atas: Manajemen Stok Bahan Baku
-        JPanel panelStok = new JPanel(new BorderLayout());
-        panelStok.setBorder(BorderFactory.createTitledBorder("Persediaan Bahan Baku"));
+        styleTable(tblBahan);
+        styleTable(tblHistory);
+
+        JPanel panelStok = new JPanel(new BorderLayout(8, 12));
+        panelStok.setBackground(Color.WHITE);
+        panelStok.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(new Color(230, 230, 230), 1, true), new EmptyBorder(15, 16, 15, 16)
+        ));
+        JLabel titleStok = new JLabel("Persediaan Bahan Baku");
+        titleStok.setFont(new Font("SansSerif", Font.BOLD, 18));
+        titleStok.setForeground(DARK);
+        panelStok.add(titleStok, BorderLayout.NORTH);
         panelStok.add(new JScrollPane(tblBahan), BorderLayout.CENTER);
 
-        JPanel formStok = new JPanel(new FlowLayout());
-        JButton btnTambahStok = new JButton("Tambah Stok (+)");
+        JPanel formStok = new JPanel(new FlowLayout(FlowLayout.LEFT, 9, 5));
+        formStok.setBackground(Color.WHITE);
+        JButton btnTambahStok = primaryButton("Tambah Stok (+)");
         JButton btnKurangStok = new JButton("Kurangi Stok (-)");
+        btnKurangStok.setBackground(new Color(245, 245, 245));
+        btnKurangStok.setForeground(DARK);
+        btnKurangStok.setFocusPainted(false);
+        btnKurangStok.setBorder(new EmptyBorder(10, 14, 10, 14));
+        styleTextField(txtIdBahan);
+        styleTextField(txtUbahStok);
         formStok.add(new JLabel("ID Bahan:"));
         formStok.add(txtIdBahan);
         formStok.add(new JLabel("Jumlah:"));
@@ -217,13 +449,18 @@ public class CafeApp extends JFrame {
         formStok.add(btnTambahStok);
         formStok.add(btnKurangStok);
         panelStok.add(formStok, BorderLayout.SOUTH);
-
         btnTambahStok.addActionListener(e -> ubahStokBahan(true));
         btnKurangStok.addActionListener(e -> ubahStokBahan(false));
 
-        // Bagian Bawah: History Pembelian
-        JPanel panelHistory = new JPanel(new BorderLayout());
-        panelHistory.setBorder(BorderFactory.createTitledBorder("History Transaksi Pembelian"));
+        JPanel panelHistory = new JPanel(new BorderLayout(8, 12));
+        panelHistory.setBackground(Color.WHITE);
+        panelHistory.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(new Color(230, 230, 230), 1, true), new EmptyBorder(15, 16, 15, 16)
+        ));
+        JLabel titleHistory = new JLabel("Riwayat Transaksi Pembelian");
+        titleHistory.setFont(new Font("SansSerif", Font.BOLD, 18));
+        titleHistory.setForeground(DARK);
+        panelHistory.add(titleHistory, BorderLayout.NORTH);
         panelHistory.add(new JScrollPane(tblHistory), BorderLayout.CENTER);
 
         panel.add(panelStok);
@@ -267,6 +504,19 @@ public class CafeApp extends JFrame {
         for (String[] m : menus) {
             cmbMenu.addItem(m[0] + " - " + m[1] + " (Rp " + m[2] + ")");
         }
+        if (cmbMenu.getItemCount() > 0) {
+            cmbMenu.setSelectedIndex(0);
+            String first = cmbMenu.getSelectedItem().toString();
+            String[] data = first.split(" - ", 2);
+            String nama = data.length > 1 ? data[1] : first;
+            int p = nama.lastIndexOf(" (Rp ");
+            if (p >= 0) {
+                lblHargaTerpilih.setText(nama.substring(p + 2, nama.length() - 1));
+                nama = nama.substring(0, p);
+            }
+            lblMenuTerpilih.setText(nama);
+        }
+        buatUlangKartuMenu();
     }
 
     private void ubahStokBahan(boolean isTambah) {
@@ -300,9 +550,64 @@ public class CafeApp extends JFrame {
         }
     }
 
+
+    private JLabel leftLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("SansSerif", Font.BOLD, 11));
+        label.setForeground(DARK);
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return label;
+    }
+
+    private JButton primaryButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("SansSerif", Font.BOLD, 12));
+        button.setForeground(DARK);
+        button.setBackground(MC_YELLOW);
+        button.setFocusPainted(false);
+        button.setBorder(new EmptyBorder(11, 16, 11, 16));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return button;
+    }
+
+    private void styleNavButton(JButton button) {
+        button.setFont(new Font("SansSerif", Font.BOLD, 11));
+        button.setForeground(DARK);
+        button.setBackground(new Color(255, 246, 218));
+        button.setFocusPainted(false);
+        button.setBorder(new EmptyBorder(11, 14, 11, 14));
+    }
+
+    private void styleTextField(JTextField field) {
+        field.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        field.setForeground(DARK);
+        field.setBackground(Color.WHITE);
+        field.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(new Color(215, 215, 215), 1, true), new EmptyBorder(9, 11, 9, 11)
+        ));
+    }
+
+    private void styleTable(JTable table) {
+        table.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        table.setRowHeight(28);
+        table.setGridColor(new Color(235, 235, 235));
+        table.setSelectionBackground(new Color(255, 239, 190));
+        table.setSelectionForeground(DARK);
+        table.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 12));
+        table.getTableHeader().setBackground(new Color(255, 246, 218));
+        table.getTableHeader().setForeground(DARK);
+        table.getTableHeader().setPreferredSize(new Dimension(0, 32));
+    }
+
+    private String escapeHtml(String text) {
+        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    }
+
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             new CafeApp().setVisible(true);
         });
     }
+
 }
