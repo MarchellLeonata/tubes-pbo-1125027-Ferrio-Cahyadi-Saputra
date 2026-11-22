@@ -28,22 +28,14 @@ public class CafeController {
         return db.getDaftarMenu();
     }
 
-   // MEMPROSES TRANSAKSI DENGAN STRATEGI DISKON
+    // MEMPROSES TRANSAKSI DENGAN STRATEGI DISKON
     public void prosesTransaksi(String username, int menuId, int jumlah)
         throws CafeException {
 
-        DiscountStrategy strategy;
-
-        if (jumlah >= 5) {
-            strategy = new QuantityDiscountStrategy();
-        } else {
-            strategy = new NoDiscountStrategy();
-        }
-
-        double diskon = strategy.getDiscountRate(jumlah);
+        double diskon = getDiskonRate(jumlah);
 
         db.prosesTransaksi(username, menuId, jumlah, diskon);
-}
+    }
 
     // MENGUBAH STOK BAHAN
     public void updateStok(int idBahan, double perubahan)
@@ -106,6 +98,19 @@ public class CafeController {
     // CEK HAK AKSES GUDANG
     public boolean bolehAksesGudang(User user) {
         return user.bolehAksesGudang();
+    }
+
+    // MENGAMBIL PERSENTASE DISKON
+    public double getDiskonRate(int jumlah) {
+        DiscountStrategy strategy;
+
+        if (jumlah >= 5) {
+            strategy = new QuantityDiscountStrategy();
+        } else {
+            strategy = new NoDiscountStrategy();
+     }
+
+        return strategy.getDiscountRate(jumlah);
     }
 
 

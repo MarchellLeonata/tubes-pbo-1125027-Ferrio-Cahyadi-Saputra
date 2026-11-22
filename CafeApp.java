@@ -1,10 +1,14 @@
 import controller.CafeController;
 import exception.CafeException;
 import java.awt.*;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import model.BahanBaku;
 import model.User;
@@ -40,7 +44,11 @@ public class CafeApp extends JFrame {
     private JTextField txtJumlahBeli = new JTextField(5);
     private JLabel lblMenuTerpilih = new JLabel("Belum ada menu dipilih");
     private JLabel lblHargaTerpilih = new JLabel("Pilih menu untuk memulai pesanan");
+    private JLabel lblInfoDiskon = new JLabel(
+        "Masukkan jumlah porsi untuk melihat diskon.");
+    private JLabel lblTotalHarga = new JLabel("Total: Rp 0");
     private JPanel panelDaftarMenu = new JPanel(new GridLayout(0, 3, 16, 16));
+    
     // Komponen Gudang & History
     private DefaultTableModel modelBahan = new DefaultTableModel(new String[]{"ID", "Nama Bahan", "Stok", "Satuan"}, 0);
     private JTable tblBahan = new JTable(modelBahan);
@@ -156,7 +164,7 @@ public class CafeApp extends JFrame {
 
         JPanel brand = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
         brand.setOpaque(false);
-        JLabel logo = new JLabel("M");
+        JLabel logo = new JLabel("C");
         logo.setOpaque(true);
         logo.setBackground(MC_YELLOW);
         logo.setForeground(MC_RED);
@@ -297,6 +305,25 @@ public class CafeApp extends JFrame {
         txtJumlahBeli.setHorizontalAlignment(JTextField.CENTER);
         styleTextField(txtJumlahBeli);
         txtJumlahBeli.setMaximumSize(new Dimension(210, 40));
+        txtJumlahBeli.getDocument().addDocumentListener(new DocumentListener() {
+
+        @Override
+        public void insertUpdate(DocumentEvent e) {
+            perbaruiInfoDiskon();
+     }
+
+        @Override
+        public void removeUpdate(DocumentEvent e) {
+            perbaruiInfoDiskon();
+     }
+
+        @Override
+        public void changedUpdate(DocumentEvent e) {
+            perbaruiInfoDiskon();
+     }
+});
+
+cmbMenu.addActionListener(e -> perbaruiInfoDiskon());
 
         JButton btnPesan = primaryButton("PROSES PESANAN");
         btnPesan.setMaximumSize(new Dimension(220, 44));
@@ -328,6 +355,17 @@ public class CafeApp extends JFrame {
         orderCard.add(lblMenuTerpilih);
         orderCard.add(Box.createVerticalStrut(5));
         orderCard.add(lblHargaTerpilih);
+        orderCard.add(Box.createVerticalStrut(8));
+
+        lblInfoDiskon.setFont(new Font("SansSerif", Font.PLAIN, 11));
+        lblInfoDiskon.setForeground(MUTED);
+
+        orderCard.add(lblInfoDiskon);
+
+        lblTotalHarga.setFont(new Font("SansSerif", Font.BOLD, 12));
+        lblTotalHarga.setForeground(MUTED);
+
+        orderCard.add(lblTotalHarga);
         orderCard.add(Box.createVerticalStrut(25));
         orderCard.add(new JSeparator());
         orderCard.add(Box.createVerticalStrut(22));
@@ -363,7 +401,7 @@ public class CafeApp extends JFrame {
         JPanel imageArea = new JPanel(new GridBagLayout());
         imageArea.setBackground(new Color(255, 246, 218));
         imageArea.setPreferredSize(new Dimension(150, 95));
-        JLabel foodMark = new JLabel("M");
+        JLabel foodMark = new JLabel("C");
         foodMark.setFont(new Font("Arial", Font.BOLD, 42));
         foodMark.setForeground(MC_RED);
         imageArea.add(foodMark);
@@ -516,6 +554,58 @@ public class CafeApp extends JFrame {
         }
         buatUlangKartuMenu();
     }
+
+    //Menghitung dan menampilkan Diskon
+    private void perbaruiInfoDiskon() {
+     try {
+        if (cmbMenu.getSelectedItem() == null ||
+                txtJumlahBeli.getText().trim().isEmpty()) {
+            lblInfoDiskon.setText(
+                "Masukkan jumlah porsi untuk melihat diskon."
+            );
+            return;
+        }
+
+        String selected = cmbMenu.getSelectedItem().toString();
+        int posisiHarga = selected.lastIndexOf("(Rp ");
+
+        if (posisiHarga < 0) {
+            return;
+        }
+
+        String hargaText = selected.substring(
+            posisiHarga + 4, selected.length() - 1
+        );
+
+        double harga = Double.parseDouble(hargaText);
+        int jumlah = Integer.parseInt(txtJumlahBeli.getText().trim());
+
+        if (jumlah <= 0) {
+            lblInfoDiskon.setText("Jumlah harus lebih dari 0.");
+            return;
+        }
+
+        double subtotal = harga * jumlah;
+        double diskon = controller.getDiskonRate(jumlah);
+        double total = subtotal - (subtotal * diskon);
+
+        NumberFormat format = NumberFormat.getNumberInstance(
+            new Locale("id", "ID")
+        );
+
+        lblInfoDiskon.setText(
+            "Subtotal: Rp " + format.format(subtotal)
+            + " | Diskon: " + (int)(diskon * 100) + "%"
+        );
+
+        lblTotalHarga.setText(
+            "Total: Rp " + format.format(total)
+        );
+
+    } catch (NumberFormatException ex) {
+        lblInfoDiskon.setText("Masukkan jumlah porsi berupa angka.");
+    }
+}
 
     private void ubahStokBahan(boolean isTambah) {
         try {
