@@ -1,3 +1,4 @@
+import controller.CafeController;
 import exception.AksesDitolakException;
 import exception.CafeException;
 import java.awt.*;
@@ -8,7 +9,6 @@ import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
 import model.BahanBaku;
 import model.User;
-import repository.DatabaseManager;
 
 public class CafeApp extends JFrame {
     private static final Color MC_YELLOW = new Color(255, 188, 0);
@@ -22,7 +22,7 @@ public class CafeApp extends JFrame {
     private JPanel mainPanel = new JPanel(cardLayout);
     private JLabel lblStatus = new JLabel("Status: Silakan Login terlebih dahulu.");
 
-    private DatabaseManager db = new DatabaseManager();
+    private CafeController controller = new CafeController();
     private User currentUser;
 
     // Komponen Login
@@ -312,7 +312,7 @@ public class CafeApp extends JFrame {
 
                 if (qty <= 0) throw new CafeException("Jumlah beli harus lebih dari 0!");
 
-                db.prosesTransaksi(currentUser.getUsername(), menuId, qty);
+                controller.prosesTransaksi(currentUser.getUsername(), menuId, qty);
                 txtJumlahBeli.setText("");
                 setPesan("Transaksi berhasil! Stok bahan baku otomatis berkurang.", false);
             } catch (NumberFormatException ex) {
@@ -476,7 +476,7 @@ public class CafeApp extends JFrame {
                 throw new CafeException("Username dan password wajib diisi!");
             }
 
-            currentUser = db.login(u, p);
+            currentUser = controller.login(u, p);
             lblWelcome.setText("Halo, " + currentUser.getDeskripsi() + " | ");
 
             // Atur visibilitas tombol berdasarkan Access Control Role
@@ -500,7 +500,7 @@ public class CafeApp extends JFrame {
 
         private void muatDataMenu() throws CafeException {
         cmbMenu.removeAllItems();
-        List<String[]> menus = db.getDaftarMenu();
+        List<String[]> menus = controller.getDaftarMenu();
         for (String[] m : menus) {
             cmbMenu.addItem(m[0] + " - " + m[1] + " (Rp " + m[2] + ")");
         }
@@ -526,7 +526,7 @@ public class CafeApp extends JFrame {
             if (jumlah <= 0) throw new CafeException("Jumlah perubahan harus lebih dari 0!");
 
             double perubahan = isTambah ? jumlah : -jumlah;
-            db.updateStok(idBahan, perubahan);
+            controller.updateStok(idBahan, perubahan);
             refreshTabelGudangDanHistory();
             txtIdBahan.setText("");
             txtUbahStok.setText("");
@@ -540,12 +540,12 @@ public class CafeApp extends JFrame {
 
         private void refreshTabelGudangDanHistory() throws CafeException {
         modelBahan.setRowCount(0);
-        for (BahanBaku b : db.getAll()) {
+        for (BahanBaku b : controller.getDaftarBahanBaku()) {
             modelBahan.addRow(new Object[]{b.getId(), b.getNamaBahan(), b.getStok(), b.getSatuan()});
         }
 
         modelHistory.setRowCount(0);
-        for (String[] h : db.getHistoryTransaksi()) {
+        for (String[] h : controller.getHistoryTransaksi()) {
             modelHistory.addRow(h);
         }
     }
