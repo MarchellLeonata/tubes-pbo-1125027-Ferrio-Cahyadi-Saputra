@@ -111,7 +111,7 @@ static {
         }
     }
 
-    public void prosesTransaksi(String kasirUsername, int menuId, int jumlahBeli) throws CafeException {
+    public void prosesTransaksi(String kasirUsername, int menuId, int jumlahBeli,double diskon) throws CafeException {
         String sqlMenu = "SELECT nama_menu, harga FROM menu WHERE id = ?";
         String sqlResep = "SELECT r.bahan_id, b.nama_bahan, b.stok, r.jumlah_dibutuhkan " +
                           "FROM resep_menu r JOIN bahan_baku b ON r.bahan_id = b.id WHERE r.menu_id = ?";
@@ -158,10 +158,13 @@ static {
                 }
 
                 try (PreparedStatement psHist = conn.prepareStatement(sqlHistory)) {
+                    double subtotal = hargaMenu * jumlahBeli;
+                    double totalHarga = subtotal - (subtotal * diskon);
+
                     psHist.setString(1, kasirUsername);
                     psHist.setString(2, namaMenu);
                     psHist.setInt(3, jumlahBeli);
-                    psHist.setDouble(4, hargaMenu * jumlahBeli);
+                    psHist.setDouble(4, totalHarga);
                     psHist.executeUpdate();
                 }
 

@@ -6,6 +6,10 @@ import java.util.List;
 import model.BahanBaku;
 import model.User;
 import repository.DatabaseManager;
+import strategy.DiscountStrategy;
+import strategy.NoDiscountStrategy;
+import strategy.QuantityDiscountStrategy;
+
 public class CafeController {
 
     private DatabaseManager db;
@@ -24,11 +28,22 @@ public class CafeController {
         return db.getDaftarMenu();
     }
 
-    // MEMPROSES TRANSAKSI
+   // MEMPROSES TRANSAKSI DENGAN STRATEGI DISKON
     public void prosesTransaksi(String username, int menuId, int jumlah)
-            throws CafeException {
-        db.prosesTransaksi(username, menuId, jumlah);
-    }
+        throws CafeException {
+
+        DiscountStrategy strategy;
+
+        if (jumlah >= 5) {
+            strategy = new QuantityDiscountStrategy();
+        } else {
+            strategy = new NoDiscountStrategy();
+        }
+
+        double diskon = strategy.getDiscountRate(jumlah);
+
+        db.prosesTransaksi(username, menuId, jumlah, diskon);
+}
 
     // MENGUBAH STOK BAHAN
     public void updateStok(int idBahan, double perubahan)
