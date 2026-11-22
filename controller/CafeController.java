@@ -6,7 +6,6 @@ import java.util.List;
 import model.BahanBaku;
 import model.User;
 import repository.DatabaseManager;
-
 public class CafeController {
 
     private DatabaseManager db;
@@ -58,6 +57,41 @@ public class CafeController {
     public void cekAksesGudang(User user) throws CafeException {
         if (!user.bolehAksesGudang()) {
             throw new AksesDitolakException(user.getRole());
+        }
     }
-}
+
+    // VALIDASI TRANSAKSI
+    public void validasiTransaksi(int jumlah) throws CafeException {
+        if (jumlah <= 0) {
+            throw new CafeException("Jumlah beli harus lebih dari 0!");
+        }
+    }
+
+    // VALIDASI PERUBAHAN STOK
+    public void validasiPerubahanStok(double jumlah) throws CafeException {
+        if (jumlah <= 0) {
+            throw new CafeException("Jumlah perubahan harus lebih dari 0!");
+        }
+    }
+
+    // VALIDASI LOGIN
+    public void validasiLogin(String username, String password)
+        throws CafeException {
+
+        if (username.isEmpty() || password.isEmpty()) {
+            throw new CafeException("Username dan password wajib diisi!");
+        }
+    }
+
+    // CEK HAK AKSES KASIR
+    public boolean bolehAksesKasir(User user) {
+        return user.bolehAksesKasir();
+    }
+
+    // CEK HAK AKSES GUDANG
+    public boolean bolehAksesGudang(User user) {
+        return user.bolehAksesGudang();
+    }
+
+
 }

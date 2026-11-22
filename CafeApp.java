@@ -1,5 +1,4 @@
 import controller.CafeController;
-import exception.AksesDitolakException;
 import exception.CafeException;
 import java.awt.*;
 import java.util.List;
@@ -207,29 +206,29 @@ public class CafeApp extends JFrame {
         // Event Tombol Navigasi dengan Pengecekan Access Control
         btnMenuKasir.addActionListener(e -> {
             try {
-                if (!currentUser.bolehAksesKasir()) {
-                    throw new AksesDitolakException(currentUser.getRole());
-                }
+                 controller.cekAksesKasir(currentUser);
+
                 muatDataMenu();
                 subCardLayout.show(subPanel, "KASIR");
                 setPesan("Membuka Panel Kasir.", false);
-            } catch (CafeException ex) {
-                setPesan(ex.getMessage(), true);
-            }
-        });
 
-        btnMenuGudang.addActionListener(e -> {
-            try {
-                if (!currentUser.bolehAksesGudang()) {
-                    throw new AksesDitolakException(currentUser.getRole());
-                }
-                refreshTabelGudangDanHistory();
-                subCardLayout.show(subPanel, "GUDANG");
-                setPesan("Membuka Panel Stok Bahan & History.", false);
-            } catch (CafeException ex) {
+             } catch (CafeException ex) {
                 setPesan(ex.getMessage(), true);
-            }
-        });
+         }
+    });
+
+         btnMenuGudang.addActionListener(e -> {
+                try {
+                    controller.cekAksesGudang(currentUser);
+
+                    refreshTabelGudangDanHistory();
+                    subCardLayout.show(subPanel, "GUDANG");
+                    setPesan("Membuka Panel Stok Bahan & History.", false);
+
+                } catch (CafeException ex) {
+                    setPesan(ex.getMessage(), true);
+         }
+    });
 
         btnLogout.addActionListener(e -> {
             currentUser = null;
@@ -310,7 +309,7 @@ public class CafeApp extends JFrame {
                 int menuId = Integer.parseInt(selected.split(" - ")[0]);
                 int qty = Integer.parseInt(txtJumlahBeli.getText().trim());
 
-                if (qty <= 0) throw new CafeException("Jumlah beli harus lebih dari 0!");
+                controller.validasiTransaksi(qty);
 
                 controller.prosesTransaksi(currentUser.getUsername(), menuId, qty);
                 txtJumlahBeli.setText("");
@@ -472,21 +471,20 @@ public class CafeApp extends JFrame {
         try {
             String u = txtUser.getText().trim();
             String p = new String(txtPass.getPassword()).trim();
-            if (u.isEmpty() || p.isEmpty()) {
-                throw new CafeException("Username dan password wajib diisi!");
-            }
+            
+            controller.validasiLogin(u, p);
 
             currentUser = controller.login(u, p);
             lblWelcome.setText("Halo, " + currentUser.getDeskripsi() + " | ");
 
             // Atur visibilitas tombol berdasarkan Access Control Role
-            btnMenuKasir.setEnabled(currentUser.bolehAksesKasir());
-            btnMenuGudang.setEnabled(currentUser.bolehAksesGudang());
+            btnMenuKasir.setEnabled(controller.bolehAksesKasir(currentUser));
+            btnMenuGudang.setEnabled(controller.bolehAksesGudang(currentUser));
 
-            if (currentUser.bolehAksesKasir()) {
+            if (controller.bolehAksesKasir(currentUser)) {
                 muatDataMenu();
                 subCardLayout.show(subPanel, "KASIR");
-            } else if (currentUser.bolehAksesGudang()) {
+            } else if (controller.bolehAksesGudang(currentUser)) {
                 refreshTabelGudangDanHistory();
                 subCardLayout.show(subPanel, "GUDANG");
             }
@@ -523,7 +521,8 @@ public class CafeApp extends JFrame {
         try {
             int idBahan = Integer.parseInt(txtIdBahan.getText().trim());
             double jumlah = Double.parseDouble(txtUbahStok.getText().trim());
-            if (jumlah <= 0) throw new CafeException("Jumlah perubahan harus lebih dari 0!");
+            
+            controller.validasiPerubahanStok(jumlah);
 
             double perubahan = isTambah ? jumlah : -jumlah;
             controller.updateStok(idBahan, perubahan);
