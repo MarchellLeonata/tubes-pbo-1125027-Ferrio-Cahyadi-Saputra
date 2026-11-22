@@ -1,0 +1,17 @@
+# Konfigurasi database pribadi
+config.properties
+
+# File hasil compile Java
+*.class
+
+# Folder hasil build
+bin/
+build/
+out/
+
+# File sementara OS
+.DS_Store
+Thumbs.db
+
+# Log
+*.log

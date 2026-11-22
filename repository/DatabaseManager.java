@@ -1,11 +1,15 @@
 package repository;
 
+
 import exception.CafeException;
 import exception.StokTidakCukupException;
 import interfaces.Repository;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import model.BahanBaku;
 import model.Karyawan;
 import model.MenuItem;
@@ -13,12 +17,28 @@ import model.TransaksiRecord;
 import model.User;
 
 public class DatabaseManager implements Repository<BahanBaku> {
-    private static final String URL = "jdbc:postgresql://localhost:5432/tubespbo";
-    private static final String USER = "postgres";
-    private static final String PASS = "bkomacheng";
+    private static Properties config = new Properties();
+
+static {
+    try {
+        FileInputStream file = new FileInputStream("config.properties");
+        config.load(file);
+        file.close();
+    } catch (IOException e) {
+        throw new RuntimeException("File config.properties tidak ditemukan!", e);
+    }
+}
 
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASS);
+        String url = config.getProperty("db.url");
+        String user = config.getProperty("db.username");
+        String pass = config.getProperty("db.password");
+
+        if (url == null || user == null || pass == null) {
+            throw new SQLException("Konfigurasi database belum lengkap!");
+    }
+
+        return DriverManager.getConnection(url, user, pass);
     }
 
     public User login(String username, String password) throws CafeException {
