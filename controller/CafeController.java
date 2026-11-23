@@ -2,30 +2,50 @@ package controller;
 
 import exception.AksesDitolakException;
 import exception.CafeException;
+import interfaces.*;
 import java.util.List;
 import model.BahanBaku;
 import model.User;
-import repository.DatabaseManager;
+import repository.*;
 import strategy.DiscountStrategy;
 import strategy.NoDiscountStrategy;
 import strategy.QuantityDiscountStrategy;
 
 public class CafeController {
 
-    private DatabaseManager db;
+    private UserRepository userRepo;
+    private BahanBakuRepository bahanBakuRepo;
+    private MenuRepository menuRepo;
+    private TransaksiRepository transaksiRepo;
 
     public CafeController() {
-        db = new DatabaseManager();
+        this(
+            new DBUserRepository(),
+            new DBBahanBakuRepository(),
+            new DBMenuRepository(),
+            new DBTransaksiRepository()
+        );
+    }
+
+    public CafeController(
+            UserRepository userRepo,
+            BahanBakuRepository bahanBakuRepo,
+            MenuRepository menuRepo,
+            TransaksiRepository transaksiRepo) {
+        this.userRepo = userRepo;
+        this.bahanBakuRepo = bahanBakuRepo;
+        this.menuRepo = menuRepo;
+        this.transaksiRepo = transaksiRepo;
     }
 
     // LOGIN
     public User login(String username, String password) throws CafeException {
-        return db.login(username, password);
+        return userRepo.login(username, password);
     }
 
     // MENGAMBIL DAFTAR MENU
     public List<String[]> getDaftarMenu() throws CafeException {
-        return db.getDaftarMenu();
+        return menuRepo.getDaftarMenu();
     }
 
     // MEMPROSES TRANSAKSI DENGAN STRATEGI DISKON
@@ -34,23 +54,23 @@ public class CafeController {
 
         double diskon = getDiskonRate(jumlah);
 
-        db.prosesTransaksi(username, menuId, jumlah, diskon);
+        transaksiRepo.prosesTransaksi(username, menuId, jumlah, diskon);
     }
 
     // MENGUBAH STOK BAHAN
     public void updateStok(int idBahan, double perubahan)
             throws CafeException {
-        db.updateStok(idBahan, perubahan);
+        bahanBakuRepo.updateStok(idBahan, perubahan);
     }
 
     // MENGAMBIL SEMUA BAHAN BAKU
     public List<BahanBaku> getDaftarBahanBaku() throws CafeException {
-        return db.getAll();
+        return bahanBakuRepo.getAll();
     }
 
     // MENGAMBIL HISTORY TRANSAKSI
     public List<String[]> getHistoryTransaksi() throws CafeException {
-        return db.getHistoryTransaksi();
+        return transaksiRepo.getHistoryTransaksi();
     }
 
     // CEK AKSES PANEL KASIR
@@ -108,10 +128,8 @@ public class CafeController {
             strategy = new QuantityDiscountStrategy();
         } else {
             strategy = new NoDiscountStrategy();
-     }
+        }
 
         return strategy.getDiscountRate(jumlah);
     }
-
-
 }
