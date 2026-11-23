@@ -8,8 +8,7 @@ import model.BahanBaku;
 import model.User;
 import repository.*;
 import strategy.DiscountStrategy;
-import strategy.NoDiscountStrategy;
-import strategy.QuantityDiscountStrategy;
+import strategy.DiscountStrategyFactory;
 
 public class CafeController {
 
@@ -122,13 +121,8 @@ public class CafeController {
 
     // MENGAMBIL PERSENTASE DISKON
     public double getDiskonRate(int jumlah) {
-        DiscountStrategy strategy;
-
-        if (jumlah >= 5) {
-            strategy = new QuantityDiscountStrategy();
-        } else {
-            strategy = new NoDiscountStrategy();
-        }
+        DiscountStrategy strategy =
+        DiscountStrategyFactory.createStrategy(jumlah);
 
         return strategy.getDiscountRate(jumlah);
     }
