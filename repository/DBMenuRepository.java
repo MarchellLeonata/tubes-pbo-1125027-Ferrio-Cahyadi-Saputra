@@ -6,6 +6,7 @@ import interfaces.MenuRepository;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import model.KustomisasiOpsi;
 import model.MenuItem;
 
 public class DBMenuRepository implements MenuRepository {
@@ -45,6 +46,35 @@ public class DBMenuRepository implements MenuRepository {
             }
         } catch (SQLException e) {
             throw new CafeException("Gagal memuat menu: " + e.getMessage());
+        }
+        return list;
+    }
+
+    @Override
+    public List<KustomisasiOpsi> getDaftarKustomisasi() throws CafeException {
+        List<KustomisasiOpsi> list = new ArrayList<>();
+        String sql = "SELECT id, kategori, tipe_opsi, nama_opsi, harga_tambahan, bahan_id, jumlah_dibutuhkan " +
+                     "FROM kustomisasi_menu ORDER BY id";
+        try (Connection conn = DatabaseConfig.getConnection();
+             Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                int rawBahanId = rs.getInt("bahan_id");
+                Integer bahanId = rs.wasNull() ? null : rawBahanId;
+
+                list.add(new KustomisasiOpsi(
+                    rs.getInt("id"),
+                    rs.getString("kategori"),
+                    rs.getString("tipe_opsi"),
+                    rs.getString("nama_opsi"),
+                    rs.getDouble("harga_tambahan"),
+                    bahanId,
+                    rs.getDouble("jumlah_dibutuhkan")
+                ));
+            }
+        } catch (SQLException e) {
+            // Jika tabel kustomisasi_menu belum dibuat, kembalikan list kosong agar menu tetap berjalan
+            return list;
         }
         return list;
     }

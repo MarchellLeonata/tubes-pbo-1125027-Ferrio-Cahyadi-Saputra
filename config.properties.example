@@ -1,3 +1,0 @@
-db.url=jdbc:postgresql://localhost:5432/tubespbo
-db.username=postgres
-db.password=your_password
